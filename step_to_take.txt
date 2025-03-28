@@ -1,0 +1,11 @@
+Khởi tạo SDL2: Tạo cửa sổ (SDL_Window) và bộ vẽ (SDL_Renderer).
+
+Vẽ giao diện: Hiển thị nền, các lỗ chuột, và chuột chui lên.
+
+Xử lý chuột xuất hiện: Random vị trí chuột, dùng SDL_GetTicks() để tạo thời gian xuất hiện.
+
+Xử lý sự kiện: Nhận sự kiện click chuột (SDL_MouseButtonDown) để kiểm tra có đập trúng không.
+
+Cập nhật và vẽ lại: Cập nhật trạng thái game và vẽ lại màn hình mỗi frame.
+
+Tính điểm & thời gian: Hiển thị điểm số và giới hạn thời gian chơi.

@@ -1,0 +1,2 @@
+all :
+	g++ -std=c++11 -Wall -O0 -g -lSDL2 -lSDL2_image -lSDL2_ttf 			    	-I/opt/homebrew/Cellar/sdl2/2.32.0/include/SDl2 				          	-I/opt/homebrew/Cellar/sdl2_image/2.8.5/include/SDl2 				       	-I/opt/homebrew/Cellar/sdl2_ttf/2.24.0/include/SDL2 			                  	-L/opt/homebrew/Cellar/sdl2_ttf/2.24.0/lib 					      	-L/opt/homebrew/Cellar/sdl2_image/2.8.5/lib 					         	-L/opt/homebrew/Cellar/sdl2/2.32.0/lib 				                       ./main.cpp  graphic.cpp click_mouse.cpp -o main
