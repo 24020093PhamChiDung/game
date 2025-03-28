@@ -10,8 +10,12 @@
 using namespace std;
 
 const int holes = 6;
+const Uint32 TimeRandom = 1200;
+const int mouseLength = 80;
+const int mouseWidth = 95;
+const int randomRatio = 100;
 
-const SDL_Point hole[holes] = {{120, 250}, {423, 282}, {650,364}, {266, 383}, {60, 486}, {491, 497}};
+const SDL_Point hole[holes] = {{120, 250}, {415, 282}, {650,364}, {258, 383}, {60, 486}, {497, 497}};
 
 
 void updateMouse(SDL_Rect &mouseRect, float deltaTime) {
@@ -39,6 +43,8 @@ int main ()
     SDL_Renderer *renderer = nullptr;
     SDL_Texture *background = nullptr;
     SDL_Texture *mouse = nullptr;
+    SDL_Texture *diamond = nullptr;
+    SDL_Texture *bom = nullptr;
     SDL_Texture *Score = nullptr;
     SDL_Surface *image_score = nullptr;
     SDL_Color color = {0, 0, 0, 255};
@@ -56,22 +62,23 @@ int main ()
         cout << "font  " << TTF_GetError() << endl;
         return -1;
     }
-    int score = 0;
     
-    if (init (window, renderer) && loadTextureToRenderer (renderer, background,"image/background.png") && loadTextureToRenderer (renderer, mouse, "image/mouse.png"))
+    if (init (window, renderer) && loadTextureToRenderer (renderer, background,"image/background.png") && loadTextureToRenderer (renderer, mouse, "image/mouse.png") && loadTextureToRenderer (renderer, diamond, "image/kimcuong.png") && loadTextureToRenderer (renderer, bom,"image/bom.png"))
     {
         SDL_Event e;
         bool run = true;
         SDL_Rect frame;
         int index = rand () % holes;
         int temp = index;
+        int randomImage = (rand () % randomRatio ) +1;
+        int score = 0;
         double deltaTime = 0;
-        double lastTime = SDL_GetTicks ();
+        Uint32 lastTime = SDL_GetTicks ();
         Uint32 Time = SDL_GetTicks ();
         
         while (run)
         {
-            frame = {hole[index].x, hole[index].y, 85, 85};
+            frame = {hole[index].x, hole[index].y, mouseWidth, mouseLength};
             while (SDL_PollEvent(&e) != 0)
             {       
                 if (e.type == SDL_QUIT) run = false;
@@ -84,7 +91,10 @@ int main ()
                             SDL_FreeSurface (image_score);
                             SDL_DestroyTexture (Score);
                         }
-                        score += 5;
+
+                        if (randomImage <= 80) score +=5;
+                        else if (randomImage > 80 && randomImage <=90) score +=10;
+                        else score -= 10;
                         string string_score = "SCORE : " + to_string (score);
                         image_score = TTF_RenderText_Blended (font, string_score.c_str (), color);
                         if (!image_score)
@@ -100,25 +110,16 @@ int main ()
                                 SDL_FreeSurface (image_score);
                             }
                         }
-                        if (isInsideRect (frame, e.button.x, e.button.y))
-                        {
-                            while (index == temp)
-                            {   
-                                index = rand () % holes;
-                            }
-                            temp = index;
-                        }
+                        temp = side (temp, index, holes);
+                        randomImage = (rand () % randomRatio ) + 1;
                         Time = SDL_GetTicks ();
                     }
                 }   
             }
-            if (SDL_GetTicks () - Time >= 1200)
+            if (SDL_GetTicks () - Time >= TimeRandom)
             {
-                while (index == temp)
-                {
-                    index = rand () % holes;
-                }
-                temp = index;
+                temp = side (temp, index, holes);
+                randomImage = (rand () % randomRatio) + 1;
                 Time = SDL_GetTicks ();
             }
             
@@ -129,10 +130,13 @@ int main ()
             SDL_RenderClear(renderer);
             SDL_RenderCopy(renderer, background, nullptr, nullptr);  // Vẽ background
             SDL_RenderCopy (renderer, Score, nullptr, &frame_score);  // Vẽ score
-            SDL_RenderCopy(renderer, mouse, nullptr, &frame);   // Vẽ chuột
+            if (randomImage <= 80) SDL_RenderCopy(renderer, mouse, nullptr, &frame);   // Vẽ chuột
+            else if (randomImage > 80 && randomImage <90) SDL_RenderCopy (renderer, diamond, nullptr, &frame);
+            else SDL_RenderCopy (renderer, bom, nullptr, &frame);
             SDL_RenderPresent(renderer);
         }
         SDL_FreeSurface (image_score);
+        SDL_DestroyTexture (diamond);
         SDL_DestroyTexture (mouse);
         SDL_DestroyTexture (Score);
         TTF_CloseFont(font);

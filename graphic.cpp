@@ -67,7 +67,7 @@ SDL_Texture* loadTextureFromSurface(string path, SDL_Renderer *renderer)
         return nullptr;
     }
 
-    image = SDL_CreateTextureFromSurface(renderer, loadsurface);
+    image = SDL_CreateTextureFromSurface(renderer, loadsurface);   // trả về texture trên heap
     if (!image)
     {
         cout << "Create texture failed : " << SDL_GetError() << endl;

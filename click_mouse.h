@@ -5,6 +5,7 @@
 #include <SDL_image.h>
 
 bool isInsideRect (SDL_Rect , int, int);
+int side (const int& , int&, const int&);
 
 #endif
 
