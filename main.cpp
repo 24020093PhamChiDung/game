@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 #include <cstdlib>
 #include <ctime>
 #include "graphic.h"
@@ -11,14 +12,14 @@ using namespace std;
 
 const int holes = 6;
 const Uint32 TimeRandom = 1200;
-const int mouseLength = 80;
-const int mouseWidth = 95;
-const int randomRatio = 100;
+const int Length = 80;  // chiều dài hình chữ nhật
+const int Width = 95;   // chiều rộng hình chũ nhật
+const int randomRatio = 100;   // Phần trăm xuất hiện
 
 const SDL_Point hole[holes] = {{120, 250}, {415, 282}, {650,364}, {258, 383}, {60, 486}, {497, 497}};
 
 
-void updateMouse(SDL_Rect &mouseRect, float deltaTime) {
+void animation (SDL_Rect &mouseRect, float deltaTime) {
     static float time = 0;
     static Uint32 lastMoveTime = 0;
 
@@ -41,6 +42,8 @@ int main ()
     srand (time (0));
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
+    Mix_Music *music = nullptr;
+    Mix_Chunk *voice = nullptr;
     SDL_Texture *background = nullptr;
     SDL_Texture *mouse = nullptr;
     SDL_Texture *diamond = nullptr;
@@ -63,7 +66,7 @@ int main ()
         return -1;
     }
     
-    if (init (window, renderer) && loadTextureToRenderer (renderer, background,"image/background.png") && loadTextureToRenderer (renderer, mouse, "image/mouse.png") && loadTextureToRenderer (renderer, diamond, "image/kimcuong.png") && loadTextureToRenderer (renderer, bom,"image/bom.png"))
+    if (init (window, renderer) && initaudio (music, voice) && loadTextureToRenderer (renderer, background,"image/background.png") && loadTextureToRenderer (renderer, mouse, "image/mouse.png") && loadTextureToRenderer (renderer, diamond, "image/kimcuong.png") && loadTextureToRenderer (renderer, bom,"image/bom.png"))
     {
         SDL_Event e;
         bool run = true;
@@ -78,12 +81,13 @@ int main ()
         
         while (run)
         {
-            frame = {hole[index].x, hole[index].y, mouseWidth, mouseLength};
+            frame = {hole[index].x, hole[index].y, Width, Length};
             while (SDL_PollEvent(&e) != 0)
             {       
                 if (e.type == SDL_QUIT) run = false;
                 else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
                 {
+                    Mix_PlayChannel (-1, voice, 0);
                     if (isInsideRect (frame, e.button.x, e.button.y))
                     {
                         if (image_score)
@@ -126,19 +130,23 @@ int main ()
             deltaTime = (SDL_GetTicks() - lastTime) / 1000.0f;
             lastTime = SDL_GetTicks ();
 
-            updateMouse(frame, deltaTime); // Cập nhật hiệu ứng di chuyển
+            animation (frame, deltaTime); // Cập nhật hiệu ứng di chuyển
             SDL_RenderClear(renderer);
             SDL_RenderCopy(renderer, background, nullptr, nullptr);  // Vẽ background
             SDL_RenderCopy (renderer, Score, nullptr, &frame_score);  // Vẽ score
             if (randomImage <= 80) SDL_RenderCopy(renderer, mouse, nullptr, &frame);   // Vẽ chuột
-            else if (randomImage > 80 && randomImage <90) SDL_RenderCopy (renderer, diamond, nullptr, &frame);
-            else SDL_RenderCopy (renderer, bom, nullptr, &frame);
+            else if (randomImage > 80 && randomImage <90) SDL_RenderCopy (renderer, diamond, nullptr, &frame); // vẽ kim cương
+            else SDL_RenderCopy (renderer, bom, nullptr, &frame); // Vẽ bom
             SDL_RenderPresent(renderer);
         }
+        Mix_FreeMusic (music);
+        Mix_FreeChunk (voice);
         SDL_FreeSurface (image_score);
+        SDL_DestroyTexture (bom);
         SDL_DestroyTexture (diamond);
         SDL_DestroyTexture (mouse);
         SDL_DestroyTexture (Score);
+        Mix_CloseAudio ();
         TTF_CloseFont(font);
         close (window, renderer, background);
     }

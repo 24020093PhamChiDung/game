@@ -44,6 +44,32 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer)
     return true;
 }
 
+
+bool initaudio (Mix_Music* &music, Mix_Chunk* & voice)
+{
+    if (Mix_OpenAudio (44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+    {
+        return false;
+    }
+    music = Mix_LoadMUS ("audio/music.mp3");   // trả về mix_music trên heap
+    if (! music)
+    {
+        cout << "background music " << Mix_GetError () << endl;
+        return false;
+    }
+
+    voice = Mix_LoadWAV ("audio/pounding.wav"); // trả về mix_chunk trên heap
+    if (! voice)
+    {
+        Mix_FreeMusic (music);
+        cout << "load voice " << Mix_GetError () << endl;
+        return false;
+    }
+
+    //Mix_PlayMusic (music, -1);
+    return true;
+}
+
 // Tải ảnh lên 
 bool loadTextureToRenderer(SDL_Renderer *renderer, SDL_Texture* &image, string path)
 {

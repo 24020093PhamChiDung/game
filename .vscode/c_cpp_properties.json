@@ -5,8 +5,11 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/opt/homebrew/Cellar/sdl2/2.32.0/include/SDL2",
-"/opt/homebrew/Cellar/sdl2_image/2.8.5/include/SDL2",
-"/opt/homebrew/Cellar/sdl2_ttf/2.24.0/include/SDL2"
+                "/opt/homebrew/Cellar/sdl2_image/2.8.5/include/SDL2",
+                "/opt/homebrew/Cellar/sdl2_ttf/2.24.0/include/SDL2",
+                "/opt/homebrew/Cellar/sdl2_mixer/2.8.1_1/include/SDL2"
+
+
 
             ],
             "defines": [],
