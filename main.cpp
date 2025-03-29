@@ -5,8 +5,10 @@
 #include <SDL_mixer.h>
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
 #include "graphic.h"
 #include "click_mouse.h"
+#include "score.h"
 
 using namespace std;
 
@@ -68,6 +70,9 @@ int main ()
     
     if (init (window, renderer) && initaudio (music, voice) && loadTextureToRenderer (renderer, background,"image/background.png") && loadTextureToRenderer (renderer, mouse, "image/mouse.png") && loadTextureToRenderer (renderer, diamond, "image/kimcuong.png") && loadTextureToRenderer (renderer, bom,"image/bom.png"))
     {
+        ifstream file ("highScore.txt");
+        int highScore ; file >> highScore;
+        file.close ();
         SDL_Event e;
         bool run = true;
         SDL_Rect frame;
@@ -75,16 +80,25 @@ int main ()
         int temp = index;
         int randomImage = (rand () % randomRatio ) +1;
         int score = 0;
-        double deltaTime = 0;
+        string string_score;
+        float deltaTime = 0;
         Uint32 lastTime = SDL_GetTicks ();
         Uint32 Time = SDL_GetTicks ();
+        Mix_VolumeChunk (voice, 128);
+        transmit (font);
+        drawScore (score, string_score, color, image_score, Score, renderer);
         
         while (run)
         {
             frame = {hole[index].x, hole[index].y, Width, Length};
             while (SDL_PollEvent(&e) != 0)
             {       
-                if (e.type == SDL_QUIT) run = false;
+                if (e.type == SDL_QUIT)
+                {
+                    run = false;
+                    SDL_FreeSurface (image_score);
+                    SDL_DestroyTexture (Score);
+                }
                 else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
                 {
                     Mix_PlayChannel (-1, voice, 0);
@@ -99,21 +113,8 @@ int main ()
                         if (randomImage <= 80) score +=5;
                         else if (randomImage > 80 && randomImage <=90) score +=10;
                         else score -= 10;
-                        string string_score = "SCORE : " + to_string (score);
-                        image_score = TTF_RenderText_Blended (font, string_score.c_str (), color);
-                        if (!image_score)
-                        {
-                            cout << "ttf_rendertext_solid " << TTF_GetError () << endl;
-                        }
-                        else
-                        {
-                            Score = SDL_CreateTextureFromSurface (renderer, image_score);
-                            if (!Score)
-                            {
-                                cout << "text score " << SDL_GetError () << endl; 
-                                SDL_FreeSurface (image_score);
-                            }
-                        }
+                        transmit (font);
+                        drawScore (score, string_score, color, image_score, Score, renderer);
                         temp = side (temp, index, holes);
                         randomImage = (rand () % randomRatio ) + 1;
                         Time = SDL_GetTicks ();
@@ -139,6 +140,15 @@ int main ()
             else SDL_RenderCopy (renderer, bom, nullptr, &frame); // Vẽ bom
             SDL_RenderPresent(renderer);
         }
+
+        if (score > highScore)
+        {
+            ofstream file ("highScore.txt",ofstream::trunc);
+            file << score;
+            file.close ();
+        }
+
+
         Mix_FreeMusic (music);
         Mix_FreeChunk (voice);
         SDL_FreeSurface (image_score);
@@ -148,6 +158,8 @@ int main ()
         SDL_DestroyTexture (Score);
         Mix_CloseAudio ();
         TTF_CloseFont(font);
+        TTF_Quit ();
+        Mix_Quit ();
         close (window, renderer, background);
     }
     return 0;

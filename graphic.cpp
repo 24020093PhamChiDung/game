@@ -65,8 +65,8 @@ bool initaudio (Mix_Music* &music, Mix_Chunk* & voice)
         cout << "load voice " << Mix_GetError () << endl;
         return false;
     }
-
-    //Mix_PlayMusic (music, -1);
+    Mix_VolumeMusic (32);
+    Mix_PlayMusic (music, -1);
     return true;
 }
 
