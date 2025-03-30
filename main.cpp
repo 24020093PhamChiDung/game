@@ -12,16 +12,57 @@
 
 using namespace std;
 
+
+
 enum wordToNum {SCORE, HIGHSCORE, TIME};
 
 const int holes = 6;
 const Uint32 TimeRandom = 1200;
-const int Length = 80;  // chiều dài hình chữ nhật
-const int Width = 95;   // chiều rộng hình chũ nhật
-const int randomRatio = 100;   // Phần trăm xuất hiện
-const int timePlay = 20;
+const int Length = 80; 
+const int Width = 95;  
+const int randomRatio = 100;  
+const int timePlay = 10;
 
 const SDL_Point hole[holes] = {{120, 250}, {415, 282}, {650,364}, {258, 383}, {60, 486}, {497, 497}};
+
+
+
+bool showMenu(SDL_Renderer* renderer)
+{
+    bool inMenu = true;
+    SDL_Event e;
+
+    SDL_Texture* menuBg = nullptr;
+    SDL_Texture* startBtn = nullptr;
+
+    loadTextureToRenderer(renderer, menuBg, "image/menu.jpg");
+    loadTextureToRenderer(renderer, startBtn, "image/play.png");
+
+    SDL_Rect startRect = {260, 140, 280, 200};
+
+    while (inMenu)
+    {
+        while (SDL_PollEvent(&e))
+        {
+            if (e.type == SDL_QUIT) return false;
+
+            else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
+            {
+                int mx = e.button.x, my = e.button.y;
+                if (isInsideRect(startRect, mx, my)) return true;  // Bắt đầu game
+            }
+        }
+
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, menuBg, nullptr, nullptr);
+        SDL_RenderCopy(renderer, startBtn, nullptr, &startRect);
+        SDL_RenderPresent(renderer);
+    }
+    return false;
+}
+
+
+
 
 
 void animation (SDL_Rect &mouseRect, float deltaTime) {
@@ -53,6 +94,7 @@ int main ()
     SDL_Texture *mouse = nullptr;
     SDL_Texture *diamond = nullptr;
     SDL_Texture *bom = nullptr;
+    SDL_Texture *bomExplode = nullptr;
     display score;
     display highScore;
     display time = {timePlay};
@@ -74,8 +116,16 @@ int main ()
         cout << "font  " << TTF_GetError() << endl;
         return -1;
     }
+
+    init (window, renderer);
+    if (!showMenu (renderer))
+    {
+        SDL_DestroyWindow (window);
+        SDL_DestroyRenderer (renderer);
+        return 0;
+    }
     
-    if (init (window, renderer) && initaudio (music, voice) && loadTextureToRenderer (renderer, background,"image/background.png") && loadTextureToRenderer (renderer, mouse, "image/mouse.png") && loadTextureToRenderer (renderer, diamond, "image/kimcuong.png") && loadTextureToRenderer (renderer, bom,"image/bom.png"))
+    if (initaudio (music, voice) && loadTextureToRenderer (renderer, background,"image/background.png") && loadTextureToRenderer (renderer, mouse, "image/mouse.png") && loadTextureToRenderer (renderer, diamond, "image/kimcuong.png") && loadTextureToRenderer (renderer, bom,"image/bom.png") && loadTextureToRenderer (renderer, bomExplode,"image/bomExplode.png"))
     {
         ifstream file ("highScore.txt");
         file >> highScore.x;
@@ -87,13 +137,11 @@ int main ()
         int index = rand () % holes;
         int temp = index;
         int randomImage = (rand () % randomRatio ) +1;
-        //int score = 0; ///
-        //string string_score;  ////
-        float deltaTime = 0;
-        Uint32 lastTime = SDL_GetTicks ();
-        Uint32 Time = SDL_GetTicks ();
-        Uint32 timeStart = SDL_GetTicks ();
-        Uint32 timeCurrent = SDL_GetTicks ();
+        float deltaTime = 0;   // animation
+        Uint32 lastTime = SDL_GetTicks ();   // animation
+        Uint32 timeStart = SDL_GetTicks ();   // thời gian chơi
+        Uint32 Time = SDL_GetTicks ();  // thời gian đếm ngược
+        Uint32 timeCurrent = SDL_GetTicks ();   // thời gian random vị trí
         Mix_VolumeChunk (voice, 128);
         transmit (font);
         draw (score.x, score.xToString, color, score.surface, score.texture, renderer, SCORE);
@@ -106,13 +154,8 @@ int main ()
             frame_hole = {hole[index].x, hole[index].y, Width, Length};
             while (SDL_PollEvent(&e) != 0)
             {       
-                if (SDL_GetTicks () - timeCurrent > 1000)
-                {
-                    timeCurrent = SDL_GetTicks ();
-                    time.x --;
-                    draw (time.x, time.xToString, color, time.surface, time.texture, renderer, TIME);
-                }
-                if (e.type == SDL_QUIT || SDL_GetTicks () - timeStart > timePlay * 1000)
+                ////
+                if (e.type == SDL_QUIT || SDL_GetTicks () - timeStart >= timePlay * 1000)
                 {
                     run = false;
                     SDL_FreeSurface (score.surface);
@@ -131,7 +174,22 @@ int main ()
 
                         if (randomImage <= 80) score.x +=5;
                         else if (randomImage > 80 && randomImage <=90) score.x +=10;
-                        else score.x -= 10;
+                        else
+                        {
+                            SDL_RenderClear(renderer);
+                            SDL_RenderCopy(renderer, background, nullptr, nullptr);  // Vẽ background
+                            SDL_RenderCopy (renderer, score.texture, nullptr, &frame_score);  // Vẽ score
+                            SDL_RenderCopy (renderer, highScore.texture, nullptr, &frame_highScore);
+                            SDL_RenderCopy (renderer, time.texture, nullptr, &frame_time);
+                            SDL_RenderCopy (renderer, bomExplode, nullptr, &frame_hole);
+                            SDL_RenderPresent (renderer);
+                            Uint32 timeNow = SDL_GetTicks ();
+                            while (SDL_GetTicks () - timeNow < 300)
+                            {
+
+                            }
+                            score.x -= 10;
+                        }
 
                         if (score.x >= highScore.x)
                         {
@@ -143,20 +201,22 @@ int main ()
                         {
                             draw (score.x, score.xToString, color, score.surface, score.texture, renderer, SCORE);
                         }
-
-                        if (SDL_GetTicks () - timeCurrent > 1000)
-                        {
-                            timeCurrent = SDL_GetTicks ();
-                            time.x --;
-                            draw (time.x, time.xToString, color, time.surface, time.texture, renderer, TIME);
-                        }
-                        
+                        ///////
                         temp = side (temp, index, holes);
                         randomImage = (rand () % randomRatio ) + 1;
                         Time = SDL_GetTicks ();
                     }
                 }   
             }
+            //////
+            if (SDL_GetTicks () - timeCurrent > 1000)
+            {
+                timeCurrent = SDL_GetTicks ();
+                time.x --;
+                draw (time.x, time.xToString, color, time.surface, time.texture, renderer, TIME);
+            }
+            //////
+
             if (SDL_GetTicks () - Time >= TimeRandom)
             {
                 temp = side (temp, index, holes);
@@ -174,7 +234,7 @@ int main ()
             SDL_RenderCopy (renderer, highScore.texture, nullptr, &frame_highScore);
             SDL_RenderCopy (renderer, time.texture, nullptr, &frame_time);
             if (randomImage <= 80) SDL_RenderCopy(renderer, mouse, nullptr, &frame_hole);   // Vẽ chuột
-            else if (randomImage > 80 && randomImage <90) SDL_RenderCopy (renderer, diamond, nullptr, &frame_hole); // vẽ kim cương
+            else if (randomImage > 80 && randomImage <= 90) SDL_RenderCopy (renderer, diamond, nullptr, &frame_hole); // vẽ kim cương
             else SDL_RenderCopy (renderer, bom, nullptr, &frame_hole); // Vẽ bom
             SDL_RenderPresent(renderer);
         }
@@ -195,6 +255,7 @@ int main ()
         SDL_DestroyTexture (bom);
         SDL_DestroyTexture (diamond);
         SDL_DestroyTexture (mouse);
+        SDL_DestroyTexture (bomExplode);
         SDL_DestroyTexture (score.texture);
         SDL_DestroyTexture (highScore.texture);
         SDL_DestroyTexture (time.texture);
