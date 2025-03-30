@@ -12,11 +12,14 @@
 
 using namespace std;
 
+enum wordToNum {SCORE, HIGHSCORE, TIME};
+
 const int holes = 6;
 const Uint32 TimeRandom = 1200;
 const int Length = 80;  // chiều dài hình chữ nhật
 const int Width = 95;   // chiều rộng hình chũ nhật
 const int randomRatio = 100;   // Phần trăm xuất hiện
+const int timePlay = 20;
 
 const SDL_Point hole[holes] = {{120, 250}, {415, 282}, {650,364}, {258, 383}, {60, 486}, {497, 497}};
 
@@ -50,10 +53,14 @@ int main ()
     SDL_Texture *mouse = nullptr;
     SDL_Texture *diamond = nullptr;
     SDL_Texture *bom = nullptr;
-    SDL_Texture *Score = nullptr;
-    SDL_Surface *image_score = nullptr;
+    display score;
+    display highScore;
+    display time = {timePlay};
+
     SDL_Color color = {0, 0, 0, 255};
     SDL_Rect frame_score = {670, 0, 100, 70};
+    SDL_Rect frame_highScore = {600, 70, 180, 70};
+    SDL_Rect frame_time = {355, 0, 90, 50};
 
     if (TTF_Init() == -1)
     {
@@ -71,50 +78,79 @@ int main ()
     if (init (window, renderer) && initaudio (music, voice) && loadTextureToRenderer (renderer, background,"image/background.png") && loadTextureToRenderer (renderer, mouse, "image/mouse.png") && loadTextureToRenderer (renderer, diamond, "image/kimcuong.png") && loadTextureToRenderer (renderer, bom,"image/bom.png"))
     {
         ifstream file ("highScore.txt");
-        int highScore ; file >> highScore;
+        file >> highScore.x;
         file.close ();
+        int HIGHSCORE = highScore.x;
         SDL_Event e;
         bool run = true;
-        SDL_Rect frame;
+        SDL_Rect frame_hole;
         int index = rand () % holes;
         int temp = index;
         int randomImage = (rand () % randomRatio ) +1;
-        int score = 0;
-        string string_score;
+        //int score = 0; ///
+        //string string_score;  ////
         float deltaTime = 0;
         Uint32 lastTime = SDL_GetTicks ();
         Uint32 Time = SDL_GetTicks ();
+        Uint32 timeStart = SDL_GetTicks ();
+        Uint32 timeCurrent = SDL_GetTicks ();
         Mix_VolumeChunk (voice, 128);
         transmit (font);
-        drawScore (score, string_score, color, image_score, Score, renderer);
+        draw (score.x, score.xToString, color, score.surface, score.texture, renderer, SCORE);
+        draw (highScore.x, highScore.xToString, color, highScore.surface, highScore.texture, renderer, wordToNum::HIGHSCORE);
+        draw (time.x, time.xToString, color, time.surface, time.texture, renderer, TIME);
+
         
         while (run)
         {
-            frame = {hole[index].x, hole[index].y, Width, Length};
+            frame_hole = {hole[index].x, hole[index].y, Width, Length};
             while (SDL_PollEvent(&e) != 0)
             {       
-                if (e.type == SDL_QUIT)
+                if (SDL_GetTicks () - timeCurrent > 1000)
+                {
+                    timeCurrent = SDL_GetTicks ();
+                    time.x --;
+                    draw (time.x, time.xToString, color, time.surface, time.texture, renderer, TIME);
+                }
+                if (e.type == SDL_QUIT || SDL_GetTicks () - timeStart > timePlay * 1000)
                 {
                     run = false;
-                    SDL_FreeSurface (image_score);
-                    SDL_DestroyTexture (Score);
+                    SDL_FreeSurface (score.surface);
+                    SDL_DestroyTexture (score.texture);
                 }
                 else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
                 {
                     Mix_PlayChannel (-1, voice, 0);
-                    if (isInsideRect (frame, e.button.x, e.button.y))
+                    if (isInsideRect (frame_hole, e.button.x, e.button.y))
                     {
-                        if (image_score)
+                        if (score.surface)
                         {
-                            SDL_FreeSurface (image_score);
-                            SDL_DestroyTexture (Score);
+                            SDL_FreeSurface (score.surface);
+                            SDL_DestroyTexture (score.texture);
                         }
 
-                        if (randomImage <= 80) score +=5;
-                        else if (randomImage > 80 && randomImage <=90) score +=10;
-                        else score -= 10;
-                        transmit (font);
-                        drawScore (score, string_score, color, image_score, Score, renderer);
+                        if (randomImage <= 80) score.x +=5;
+                        else if (randomImage > 80 && randomImage <=90) score.x +=10;
+                        else score.x -= 10;
+
+                        if (score.x >= highScore.x)
+                        {
+                            highScore.x = score.x;
+                            draw (score.x, score.xToString, color, score.surface, score.texture, renderer, SCORE);
+                            draw (highScore.x, highScore.xToString, color, highScore.surface, highScore.texture, renderer, wordToNum::HIGHSCORE);
+                        }
+                        else
+                        {
+                            draw (score.x, score.xToString, color, score.surface, score.texture, renderer, SCORE);
+                        }
+
+                        if (SDL_GetTicks () - timeCurrent > 1000)
+                        {
+                            timeCurrent = SDL_GetTicks ();
+                            time.x --;
+                            draw (time.x, time.xToString, color, time.surface, time.texture, renderer, TIME);
+                        }
+                        
                         temp = side (temp, index, holes);
                         randomImage = (rand () % randomRatio ) + 1;
                         Time = SDL_GetTicks ();
@@ -131,31 +167,37 @@ int main ()
             deltaTime = (SDL_GetTicks() - lastTime) / 1000.0f;
             lastTime = SDL_GetTicks ();
 
-            animation (frame, deltaTime); // Cập nhật hiệu ứng di chuyển
+            animation (frame_hole, deltaTime); // Cập nhật hiệu ứng di chuyển
             SDL_RenderClear(renderer);
             SDL_RenderCopy(renderer, background, nullptr, nullptr);  // Vẽ background
-            SDL_RenderCopy (renderer, Score, nullptr, &frame_score);  // Vẽ score
-            if (randomImage <= 80) SDL_RenderCopy(renderer, mouse, nullptr, &frame);   // Vẽ chuột
-            else if (randomImage > 80 && randomImage <90) SDL_RenderCopy (renderer, diamond, nullptr, &frame); // vẽ kim cương
-            else SDL_RenderCopy (renderer, bom, nullptr, &frame); // Vẽ bom
+            SDL_RenderCopy (renderer, score.texture, nullptr, &frame_score);  // Vẽ score
+            SDL_RenderCopy (renderer, highScore.texture, nullptr, &frame_highScore);
+            SDL_RenderCopy (renderer, time.texture, nullptr, &frame_time);
+            if (randomImage <= 80) SDL_RenderCopy(renderer, mouse, nullptr, &frame_hole);   // Vẽ chuột
+            else if (randomImage > 80 && randomImage <90) SDL_RenderCopy (renderer, diamond, nullptr, &frame_hole); // vẽ kim cương
+            else SDL_RenderCopy (renderer, bom, nullptr, &frame_hole); // Vẽ bom
             SDL_RenderPresent(renderer);
         }
 
-        if (score > highScore)
+        if (score.x > HIGHSCORE)
         {
-            ofstream file ("highScore.txt",ofstream::trunc);
-            file << score;
+            ofstream file ("highScore.txt", ofstream::trunc);
+            file << score.x;
             file.close ();
         }
 
 
         Mix_FreeMusic (music);
         Mix_FreeChunk (voice);
-        SDL_FreeSurface (image_score);
+        SDL_FreeSurface (score.surface);
+        SDL_FreeSurface (highScore.surface);
+        SDL_FreeSurface (time.surface);
         SDL_DestroyTexture (bom);
         SDL_DestroyTexture (diamond);
         SDL_DestroyTexture (mouse);
-        SDL_DestroyTexture (Score);
+        SDL_DestroyTexture (score.texture);
+        SDL_DestroyTexture (highScore.texture);
+        SDL_DestroyTexture (time.texture);
         Mix_CloseAudio ();
         TTF_CloseFont(font);
         TTF_Quit ();

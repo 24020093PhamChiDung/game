@@ -11,21 +11,30 @@ void transmit (TTF_Font* &inMain)
 }
 
 
-void drawScore (const int &score, string &string_score, SDL_Color &color ,SDL_Surface* &image_score, SDL_Texture* &Score, SDL_Renderer* &renderer)
+void draw (const int &x, string &xToString, SDL_Color &color ,SDL_Surface* &surface, SDL_Texture* &texture, SDL_Renderer* &renderer, int check)
 {
-    string_score = "SCORE : " + to_string (score);
-    image_score = TTF_RenderText_Blended (font, string_score.c_str (), color);
-    if (!image_score)
+    if (check == 0)
+    {
+        xToString = "SCORE : " + to_string (x);
+    }
+    else if (check == 1)
+    {
+        xToString = "HIGHSCORE : " + to_string (x);
+    }
+    else xToString = "TIME : " + to_string (x);
+    
+    surface = TTF_RenderText_Blended (font, xToString.c_str (), color);
+    if (!surface)
     {
         cout << "ttf_rendertext_solid " << TTF_GetError () << endl;
     }
     else
     {
-        Score = SDL_CreateTextureFromSurface (renderer, image_score);
-        if (!Score)
+        texture = SDL_CreateTextureFromSurface (renderer, surface);
+        if (!texture)
         {
             cout << "text score " << SDL_GetError () << endl; 
-            SDL_FreeSurface (image_score);
+            SDL_FreeSurface (surface);
         }
     }
 }
