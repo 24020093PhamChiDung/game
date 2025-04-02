@@ -7,6 +7,8 @@ const string title = "WHACK A MOLE";
 const int width = 800;
 const int height = 600;
 
+SDL_Color color = {255, 255, 255, 255};
+
 // Tạo cửa sổ và renderer
 bool init(SDL_Window* &window, SDL_Renderer* &renderer)
 {
@@ -45,6 +47,50 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer)
 }
 
 
+
+
+
+bool showMenu(SDL_Renderer* &renderer )
+{
+    bool inMenu = true;
+    SDL_Event e;
+
+    SDL_Texture* menu = nullptr;
+    //SDL_Texture* start = nullptr;
+    // 295, 540, 230, 30
+    SDL_Rect play = {295, 540, 230, 30};
+
+    loadTextureToRenderer(renderer, menu, "image/menu.jpg");
+    while (inMenu)
+    {
+        while (SDL_PollEvent(&e))
+        {
+            if (e.type == SDL_QUIT)
+            {
+               
+                SDL_DestroyTexture (menu);
+                return false;
+            }
+
+            else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
+            {
+                if (isInsideRect (play, e.button.x, e.button.y))
+                {
+                    SDL_DestroyTexture (menu);
+                    return true;
+                }
+            }
+        }
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, menu, nullptr, nullptr);
+        SDL_RenderPresent(renderer);
+
+    }
+    return false;
+}
+
+
+
 bool initaudio (Mix_Music* &music, Mix_Chunk* & voice)
 {
     if (Mix_OpenAudio (44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
@@ -66,7 +112,6 @@ bool initaudio (Mix_Music* &music, Mix_Chunk* & voice)
         return false;
     }
     Mix_VolumeMusic (32);
-    Mix_PlayMusic (music, -1);
     return true;
 }
 

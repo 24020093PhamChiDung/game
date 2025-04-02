@@ -12,6 +12,7 @@ struct display
     std::string xToString;
     SDL_Surface *surface;
     SDL_Texture *texture;
+    SDL_Rect rect;
 
     display (int x_ = 0, SDL_Surface *surface_ = nullptr, SDL_Texture *texture_ = nullptr)
     {
