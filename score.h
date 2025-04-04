@@ -31,6 +31,6 @@ struct display
 };
 
 void transmit (TTF_Font* &);
-void draw (const int&, std::string &, SDL_Color&, SDL_Surface* &, SDL_Texture* &, SDL_Renderer* &, int);
+void drawTexture (const int&, std::string &, SDL_Color&, SDL_Surface* &, SDL_Texture* &, SDL_Renderer* &, int);
 
 #endif

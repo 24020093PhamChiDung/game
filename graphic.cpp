@@ -7,7 +7,7 @@ const string title = "WHACK A MOLE";
 const int width = 800;
 const int height = 600;
 
-SDL_Color color = {255, 255, 255, 255};
+SDL_Color color = {0, 0, 0, 255};
 
 // Tạo cửa sổ và renderer
 bool init(SDL_Window* &window, SDL_Renderer* &renderer)
@@ -91,6 +91,64 @@ bool showMenu(SDL_Renderer* &renderer )
 
 
 
+bool lastMenu (SDL_Renderer* &renderer, display &score, display &time, display &highScore, SDL_Texture* &background)
+{
+    SDL_Event e;
+    bool run = true;
+    bool check = false;
+    SDL_Texture *lastmenu = nullptr; 
+    SDL_Texture *restart = nullptr;
+
+    loadTextureToRenderer (renderer, lastmenu, "image/yourScore.png");
+    loadTextureToRenderer (renderer, restart, "image/restart.png");
+
+    SDL_Rect menu = {200, 200, 400, 200};
+    SDL_Rect Score = {300, 250, 200, 100};
+    SDL_Rect Restart = {310, 400, 180, 100};
+
+    display scoreInlastMenu;
+    scoreInlastMenu.x = score.x;
+    drawTexture (scoreInlastMenu.x, scoreInlastMenu.xToString, color, scoreInlastMenu.surface, scoreInlastMenu.texture, renderer, 10);
+
+
+    while (run)
+    {
+        while (SDL_PollEvent (&e))
+        {
+            if (e.type == SDL_QUIT)
+            {
+                run = false;
+                SDL_DestroyTexture (lastmenu);
+            }
+            else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
+            {
+                if (isInsideRect (Restart, e.button.x, e.button.y))
+                {
+                    check = true;
+                    run = false;
+                    break;
+                }
+            }
+        }
+
+        SDL_RenderClear (renderer);
+        SDL_RenderCopy(renderer, background, nullptr, nullptr);  // Vẽ background
+        SDL_RenderCopy (renderer, score.texture, nullptr, &score.rect);  // Vẽ score
+        SDL_RenderCopy (renderer, highScore.texture, nullptr, &highScore.rect);
+        SDL_RenderCopy (renderer, time.texture, nullptr, &time.rect);
+        SDL_RenderCopy (renderer, lastmenu, nullptr, &menu);
+        SDL_RenderCopy (renderer, restart, nullptr, &Restart);
+        SDL_RenderCopy (renderer, scoreInlastMenu.texture, nullptr, &Score);
+        SDL_RenderPresent(renderer);
+    }
+    SDL_DestroyTexture (lastmenu);
+    SDL_DestroyTexture (restart);
+    SDL_DestroyTexture (scoreInlastMenu.texture);
+    return check;
+}
+
+
+
 bool initaudio (Mix_Music* &music, Mix_Chunk* & voice)
 {
     if (Mix_OpenAudio (44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
@@ -112,6 +170,7 @@ bool initaudio (Mix_Music* &music, Mix_Chunk* & voice)
         return false;
     }
     Mix_VolumeMusic (32);
+    Mix_VolumeChunk (voice, 128);
     return true;
 }
 
@@ -148,6 +207,28 @@ SDL_Texture* loadTextureFromSurface(string path, SDL_Renderer *renderer)
     SDL_FreeSurface(loadsurface);
     return image;
 }
+
+
+void animation (SDL_Rect &displayRect, float &deltaTime, const SDL_Point &basePos) 
+{
+    static float time = 0;
+    static Uint32 lastMoveTime = 0;
+
+    time += deltaTime;
+    float offsetX = sin(time * 3) * 3; // Lắc lư theo sin
+
+    Uint32 currentTime = SDL_GetTicks();
+    if (currentTime - lastMoveTime > 2000) { // 2000 ms = 2 giây
+        lastMoveTime = currentTime;
+        displayRect.x += (rand() % 11) - 5; // Dịch ngẫu nhiên -5 đến +5 px
+        displayRect.y += (rand() % 11) - 5;
+    }
+
+    // Giữ vị trí hiển thị dựa trên vị trí cơ bản + hiệu ứng
+    displayRect.x = basePos.x + offsetX * deltaTime * 60; // Tốc độ mượt mà hơn
+    displayRect.y = basePos.y; // Giữ y cố định hoặc thêm hiệu ứng nếu muốn
+}
+
 
 // Đóng chương trình
 void close(SDL_Window *window, SDL_Renderer *renderer, SDL_Texture *image)

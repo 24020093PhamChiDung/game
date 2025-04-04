@@ -11,7 +11,7 @@ void transmit (TTF_Font* &inMain)
 }
 
 
-void draw (const int &x, string &xToString, SDL_Color &color ,SDL_Surface* &surface, SDL_Texture* &texture, SDL_Renderer* &renderer, int check)
+void drawTexture (const int &x, string &xToString, SDL_Color &color ,SDL_Surface* &surface, SDL_Texture* &texture, SDL_Renderer* &renderer, int check)
 {
     if (check == 0)
     {
@@ -21,15 +21,23 @@ void draw (const int &x, string &xToString, SDL_Color &color ,SDL_Surface* &surf
     {
         xToString = "HIGHSCORE : " + to_string (x);
     }
-    else xToString = "TIME : " + to_string (x);
+    else if (check == 2)
+    {
+        xToString = "TIME : " + to_string (x);
+    }
+    else xToString = "" + to_string (x);
     
     surface = TTF_RenderText_Blended (font, xToString.c_str (), color);
     if (!surface)
     {
-        cout << "ttf_rendertext_solid " << TTF_GetError () << endl;
+        cout << "ttf_rendertext_blended " << TTF_GetError () << endl;
     }
     else
     {
+        if (texture)
+        {
+            SDL_DestroyTexture (texture);
+        }
         texture = SDL_CreateTextureFromSurface (renderer, surface);
         if (!texture)
         {
@@ -37,4 +45,6 @@ void draw (const int &x, string &xToString, SDL_Color &color ,SDL_Surface* &surf
             SDL_FreeSurface (surface);
         }
     }
+    SDL_FreeSurface (surface);
+    surface = nullptr;
 }
