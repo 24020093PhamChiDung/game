@@ -19,7 +19,7 @@ const Uint32 TimeRandom = 1200;
 const int Length = 80;
 const int Width = 95;
 const int randomRatio = 100;
-const int timePlay = 5;
+const int timePlay = 50;
 const int FPS = 60;
 const float FRAME_TIME = 1000.0f / FPS;
 
@@ -89,7 +89,6 @@ int main() {
     do {
         transmit(font);
         
-        Mix_VolumeMusic(32);
         Mix_PlayMusic(music, -1);
 
         ifstream file("highScore.txt");
@@ -205,7 +204,7 @@ int main() {
             }
         }
 
-        Mix_VolumeMusic(0);
+        //Mix_VolumeMusic(0);
         Mix_PauseMusic(); // Tạm dừng nhạc để tránh chồng lấn khi restart
         if (lastMenu(renderer, score, time, highScore, background)) {
             restart = true;
